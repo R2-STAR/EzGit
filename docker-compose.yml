@@ -3,25 +3,25 @@ version: "3.9"
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: gitanalyzer_postgres
+    container_name: ezGit_postgres
     environment:
-      POSTGRES_DB: gitanalyzer
-      POSTGRES_USER: gitanalyzer
-      POSTGRES_PASSWORD: gitanalyzer
+      POSTGRES_DB: ezGit
+      POSTGRES_USER: ezGit
+      POSTGRES_PASSWORD: ezGit
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/app/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gitanalyzer"]
+      test: ["CMD-SHELL", "pg_isready -U ezGit"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: gitanalyzer_redis
+    container_name: ezGit_redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -34,7 +34,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: gitanalyzer_backend
+    container_name: ezGit_backend
     ports:
       - "8000:8000"
     env_file:
@@ -52,7 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: gitanalyzer_worker
+    container_name: ezGit_worker
     env_file:
       - ./backend/.env
     depends_on:
@@ -68,7 +68,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: gitanalyzer_frontend
+    container_name: ezGit_frontend
     ports:
       - "5173:5173"
     volumes:
