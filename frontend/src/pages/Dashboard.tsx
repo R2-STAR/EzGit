@@ -13,7 +13,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-3xl font-bold text-white">Welcome to ezGit</h1>
+        <h1 className="text-3xl font-bold text-white">Welcome to EzGit</h1>
         <p className="mt-2 text-gray-400 text-lg">AI-powered code intelligence for your GitHub and GitLab repositories.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

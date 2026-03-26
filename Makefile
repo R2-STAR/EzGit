@@ -1,13 +1,13 @@
 .PHONY: setup dev dev-bg stop clean logs shell-backend shell-db rebuild test
 
 setup:
-	@echo "Starting GitAnalyzer for the first time..."
+	@echo "Starting EzGit for the first time..."
 	docker compose build
 	docker compose up -d postgres redis
 	@echo "Waiting for Postgres to be ready..."
 	sleep 5
 	docker compose up -d backend worker frontend
-	@echo "GitAnalyzer is running!"
+	@echo "EzGit is running!"
 	@echo "   Frontend : http://localhost:5173"
 	@echo "   Backend  : http://localhost:8000"
 	@echo "   API Docs : http://localhost:8000/docs"
@@ -32,7 +32,7 @@ shell-backend:
 	docker compose exec backend bash
 
 shell-db:
-	docker compose exec postgres psql -U gitanalyzer -d gitanalyzer
+	docker compose exec postgres psql -U ezgit -d ezgit
 
 rebuild:
 	docker compose up -d --build $(service)

@@ -1,8 +1,9 @@
 import asyncio
 from celery import Celery
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 from app.config import settings
-from app.db.postgres import AsyncSessionLocal
 
 celery_app = Celery(
     "ezGit",
@@ -19,8 +20,15 @@ celery_app.conf.update(
 )
 
 
+def make_session_factory():
+    """Create a fresh engine + session factory — safe for forked Celery workers."""
+    engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
+    return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
 def run_async(coro):
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coro)
     finally:
@@ -35,9 +43,11 @@ def run_security_scan(self, scan_id: str, repo_name: str):
         from app.services.gemini import explain_scan_findings
         import json
 
+        AsyncSessionLocal = make_session_factory()
+
         async with AsyncSessionLocal() as db:
             await db.execute(
-                text("UPDATE scan_results SET status = 'running' WHERE id = :id::uuid"),
+                text("UPDATE scan_results SET status = 'running' WHERE id = CAST(:id AS uuid)"),
                 {"id": scan_id},
             )
             await db.commit()
@@ -54,7 +64,7 @@ def run_security_scan(self, scan_id: str, repo_name: str):
                             snyk_findings = :snyk::jsonb,
                             ai_report = :report,
                             completed_at = NOW()
-                        WHERE id = :id::uuid
+                        WHERE id = CAST(:id AS uuid)
                     """),
                     {"id": scan_id, "semgrep": json.dumps(semgrep_findings),
                      "snyk": json.dumps(snyk_findings), "report": ai_report},
@@ -63,7 +73,7 @@ def run_security_scan(self, scan_id: str, repo_name: str):
         except Exception as e:
             async with AsyncSessionLocal() as db:
                 await db.execute(
-                    text("UPDATE scan_results SET status = 'error', error_message = :err WHERE id = :id::uuid"),
+                    text("UPDATE scan_results SET status = 'error', error_message = :err WHERE id = CAST(:id AS uuid)"),
                     {"id": scan_id, "err": str(e)},
                 )
                 await db.commit()
@@ -75,5 +85,5 @@ def run_security_scan(self, scan_id: str, repo_name: str):
 def index_repo_task(self, repo_name: str):
     async def _run():
         from app.services.embeddings import index_repository
-        return await index_repository(repo_name)
+        return await index_repository(repo_name, make_session_factory())
     return run_async(_run())

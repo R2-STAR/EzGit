@@ -17,7 +17,7 @@ async def insert_embedding(
     await db.execute(
         text("""
             INSERT INTO code_embeddings (repo_url, file_path, chunk_text, embedding)
-            VALUES (:repo_url, :file_path, :chunk_text, :embedding::vector)
+            VALUES (:repo_url, :file_path, :chunk_text, CAST(:embedding AS vector))
         """),
         {
             "repo_url": repo_url,
@@ -39,10 +39,10 @@ async def similarity_search(
             SELECT
                 file_path,
                 chunk_text,
-                1 - (embedding <=> :embedding::vector) AS similarity
+                1 - (embedding <=> CAST(:embedding AS vector)) AS similarity
             FROM code_embeddings
             WHERE repo_url = :repo_url
-            ORDER BY embedding <=> :embedding::vector
+            ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :top_k
         """),
         {

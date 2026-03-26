@@ -31,4 +31,4 @@ Thumbs.db
 
 # Logs
 *.log
-celery*.log
+celery*.log.env

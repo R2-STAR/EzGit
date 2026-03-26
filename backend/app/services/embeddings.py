@@ -1,5 +1,6 @@
 from sqlalchemy import text
-from app.db.postgres import AsyncSessionLocal
+from sqlalchemy.orm import sessionmaker
+from app.db.postgres import AsyncSessionLocal as DefaultSessionLocal
 from app.db.vector import insert_embedding, delete_repo_embeddings
 from app.services.gemini import embed_text
 from app.services.github import get_code_files, get_file_content
@@ -9,7 +10,10 @@ MAX_FILES = 150
 MAX_CHUNKS_PER_FILE = 20
 
 
-async def index_repository(repo_name: str) -> dict:
+async def index_repository(repo_name: str, AsyncSessionLocal=None) -> dict:
+    if AsyncSessionLocal is None:
+        AsyncSessionLocal = DefaultSessionLocal
+
     async with AsyncSessionLocal() as db:
         await db.execute(
             text("""
@@ -66,7 +70,7 @@ async def index_repository(repo_name: str) -> dict:
 
 
 async def get_index_status(repo_name: str) -> dict | None:
-    async with AsyncSessionLocal() as db:
+    async with DefaultSessionLocal() as db:
         result = await db.execute(
             text("SELECT * FROM indexed_repos WHERE repo_url = :repo"),
             {"repo": repo_name},

@@ -26,4 +26,4 @@ app.include_router(scan.router,    prefix="/scan",    tags=["Security Scan"])
 app.include_router(onboard.router, prefix="/onboard", tags=["Onboarding"])
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "gitanalyzer-api"}
+    return {"status": "ok", "service": "ezGit-api"}

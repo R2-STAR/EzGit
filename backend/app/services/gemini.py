@@ -5,8 +5,8 @@ from app.config import settings
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
-_model = genai.GenerativeModel("gemini-1.5-pro")
-_embed_model = "models/embedding-001"
+_model = genai.GenerativeModel("gemini-flash-lite-latest")
+_embed_model = "models/gemini-embedding-001"
 
 
 def _clean_json(text: str) -> str:
@@ -111,18 +111,22 @@ File tree (sample):
 
 
 async def embed_text(text: str) -> list[float]:
-    result = genai.embed_content(
-        model=_embed_model,
-        content=text,
-        task_type="retrieval_document",
-    )
-    return result["embedding"]
+    import httpx
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={settings.GEMINI_API_KEY}",
+            json={"model": "models/gemini-embedding-001", "content": {"parts": [{"text": text}]}, "taskType": "RETRIEVAL_DOCUMENT"},
+        )
+        r.raise_for_status()
+        return r.json()["embedding"]["values"]
 
 
 async def embed_query(query: str) -> list[float]:
-    result = genai.embed_content(
-        model=_embed_model,
-        content=query,
-        task_type="retrieval_query",
-    )
-    return result["embedding"]
+    import httpx
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={settings.GEMINI_API_KEY}",
+            json={"model": "models/gemini-embedding-001", "content": {"parts": [{"text": query}]}, "taskType": "RETRIEVAL_QUERY"},
+        )
+        r.raise_for_status()
+        return r.json()["embedding"]["values"]

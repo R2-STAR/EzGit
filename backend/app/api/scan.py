@@ -23,7 +23,7 @@ async def start_scan(body: ScanRequest, db: AsyncSession = Depends(get_db)):
 @router.get("/{scan_id}")
 async def get_scan_result(scan_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        text("SELECT * FROM scan_results WHERE id = :id::uuid"),
+        text("SELECT * FROM scan_results WHERE id = CAST(:id AS uuid)"),
         {"id": scan_id},
     )
     row = result.fetchone()

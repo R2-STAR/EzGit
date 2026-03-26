@@ -21,7 +21,7 @@ export default function Layout() {
           <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-lg text-white tracking-tight">GitAnalyzer</span>
+          <span className="font-bold text-lg text-white tracking-tight">EzGit</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map(({ to, icon: Icon, label }) => (
