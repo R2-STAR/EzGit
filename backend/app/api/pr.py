@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any
 from datetime import datetime
 
 from app.db.postgres import get_db
@@ -15,12 +15,10 @@ from app.services.gemini import explain_pr
 router = APIRouter()
 
 
-
 class PRExplainRequest(BaseModel):
     repo: str
     pr_number: int
     provider: Optional[str] = "github"
-
 
 
 class PRExplainResponse(BaseModel):
@@ -32,6 +30,7 @@ class PRExplainResponse(BaseModel):
     summary: Any
     risk_score: int
 
+
 class PRHistoryItem(BaseModel):
     pr_number: int
     title: str
@@ -39,20 +38,27 @@ class PRHistoryItem(BaseModel):
     created_at: Optional[datetime]
 
 
-
-@router.post("/explain", response_model=PRExplainResponse)  
+@router.post("/explain", response_model=PRExplainResponse)
 async def explain_pull_request(body: PRExplainRequest, db: AsyncSession = Depends(get_db)):
     cache_key = f"pr:{body.repo}:{body.pr_number}"
     cached = await cache_get(cache_key)
     if cached:
         return json.loads(cached)
     existing = await db.execute(
-        text("SELECT summary, risk_score FROM pr_summaries WHERE repo_url = :repo AND pr_number = :num"),
+        text("SELECT title, author, changed_files, summary, risk_score FROM pr_summaries WHERE repo_url = :repo AND pr_number = :num"),
         {"repo": body.repo, "num": body.pr_number},
     )
     row = existing.fetchone()
     if row:
-        result = {"summary": row.summary, "risk_score": row.risk_score}
+        result = {
+            "repo": body.repo,
+            "pr_number": body.pr_number,
+            "title": row.title,
+            "author": row.author or "Unknown",
+            "changed_files": row.changed_files or [],
+            "summary": row.summary,
+            "risk_score": row.risk_score,
+        }
         await cache_set(cache_key, json.dumps(result))
         return result
     try:
@@ -69,15 +75,17 @@ async def explain_pull_request(body: PRExplainRequest, db: AsyncSession = Depend
     risk_score = explanation.get("risk_score", 0)
     await db.execute(
         text("""
-            INSERT INTO pr_summaries (repo_url, pr_number, title, summary, risk_score)
-            VALUES (:repo, :num, :title, cast(:summary as jsonb), :risk)
+            INSERT INTO pr_summaries (repo_url, pr_number, title, author, changed_files, summary, risk_score)
+            VALUES (:repo, :num, :title, :author, cast(:changed_files as jsonb), cast(:summary as jsonb), :risk)
             ON CONFLICT (repo_url, pr_number) DO UPDATE
-            SET summary = EXCLUDED.summary, risk_score = EXCLUDED.risk_score
+            SET summary = EXCLUDED.summary, risk_score = EXCLUDED.risk_score,
+                author = EXCLUDED.author, changed_files = EXCLUDED.changed_files
         """),
         {"repo": body.repo, "num": body.pr_number, "title": pr_data["title"],
+         "author": pr_data["author"], "changed_files": json.dumps(pr_data["files"]),
          "summary": json.dumps(explanation), "risk": risk_score},
     )
-    await db.commit() 
+    await db.commit()
     result = {
         "repo": body.repo, "pr_number": body.pr_number,
         "title": pr_data["title"], "author": pr_data["author"],
@@ -87,7 +95,7 @@ async def explain_pull_request(body: PRExplainRequest, db: AsyncSession = Depend
     return result
 
 
-@router.get("/history/{repo:path}", response_model=List[PRHistoryItem])  
+@router.get("/history/{repo:path}", response_model=List[PRHistoryItem])
 async def get_pr_history(repo: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         text("SELECT pr_number, title, risk_score, created_at FROM pr_summaries WHERE repo_url = :repo ORDER BY created_at DESC LIMIT 20"),

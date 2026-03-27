@@ -60,8 +60,8 @@ def run_security_scan(self, scan_id: str, repo_name: str):
                     text("""
                         UPDATE scan_results
                         SET status = 'done',
-                            semgrep_findings = :semgrep::jsonb,
-                            snyk_findings = :snyk::jsonb,
+                            semgrep_findings = CAST(:semgrep AS jsonb),
+                            snyk_findings = CAST(:snyk AS jsonb),
                             ai_report = :report,
                             completed_at = NOW()
                         WHERE id = CAST(:id AS uuid)
