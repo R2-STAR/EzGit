@@ -25,9 +25,9 @@ Understand any GitHub or GitLab repository instantly. Explain PRs, search code i
 ## Screenshots
 
 ![Dashboard](docs/screenshots/Dashboard.jpeg)
-![PR Explainer](docs/screenshots/PR Explainer.jpeg)
-![Code Search](docs/screenshots/code-search.png)
-![Security Scanner](docs/screenshots/scanner.png)
+![PR Explainer](docs/screenshots/PRExplainer.jpeg)
+![Code Search](docs/screenshots/CodeSearch.jpeg)
+![Security Scanner](docs/screenshots/SecurityScanner.png)
 
 ## Getting Started
 
