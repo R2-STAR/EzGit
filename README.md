@@ -41,8 +41,8 @@ Understand any GitHub or GitLab repository instantly. Explain PRs, search code i
 
 Clone the repo:
 
-    git clone https://github.com/Shefali21s/GitAnalyzer.git
-    cd GitAnalyzer
+    git clone https://github.com/R2-STAR/EzGit.git
+    cd EzGit
 
 Create your environment file:
 
