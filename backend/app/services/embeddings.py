@@ -72,7 +72,7 @@ async def index_repository(repo_name: str, AsyncSessionLocal=None) -> dict:
 async def get_index_status(repo_name: str) -> dict | None:
     async with DefaultSessionLocal() as db:
         result = await db.execute(
-            text("SELECT * FROM indexed_repos WHERE repo_url = :repo"),
+            text("SELECT * FROM indexed_repos WHERE repo_url = :repo").execution_options(no_cache=True),
             {"repo": repo_name},
         )
         row = result.fetchone()
@@ -85,3 +85,4 @@ async def get_index_status(repo_name: str) -> dict | None:
             "chunk_count": row.chunk_count,
             "indexed_at": row.indexed_at,
         }
+    
