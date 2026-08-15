@@ -2,11 +2,15 @@ import subprocess
 import json
 import tempfile
 import os
+import shutil
 from typing import List
 from app.services.github import get_file_content, get_code_files
 
 
 async def run_semgrep_on_repo(repo_name: str) -> List[dict]:
+    semgrep_bin = shutil.which("semgrep")
+    if not semgrep_bin:
+        raise RuntimeError("semgrep CLI is not installed. Run: pip install semgrep")
     code_files = await get_code_files(repo_name)
     code_files = code_files[:50]
     findings = []
@@ -20,8 +24,8 @@ async def run_semgrep_on_repo(repo_name: str) -> List[dict]:
             with open(full_path, "w", encoding="utf-8", errors="ignore") as f:
                 f.write(content)
         result = subprocess.run(
-            ["semgrep", "--config=auto", "--json", "--quiet", tmpdir],
-            capture_output=True, text=True, timeout=120,
+            [semgrep_bin, "--config=auto", "--json", "--quiet", tmpdir],
+            capture_output=True, text=True, timeout=600,
         )
         if result.stdout:
             try:

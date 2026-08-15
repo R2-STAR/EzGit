@@ -46,6 +46,7 @@ export interface IndexStatus {
   status: 'not_indexed' | 'pending' | 'indexing' | 'done' | 'error'
   file_count?: number
   chunk_count?: number
+  error_message?: string
   indexed_at?: string
 }
 

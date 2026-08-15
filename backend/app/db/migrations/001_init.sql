@@ -18,13 +18,15 @@ CREATE INDEX IF NOT EXISTS idx_embeddings_vector
     WITH (lists = 100);
 
 CREATE TABLE IF NOT EXISTS pr_summaries (
-    id           SERIAL PRIMARY KEY,
-    repo_url     TEXT NOT NULL,
-    pr_number    INT  NOT NULL,
-    title        TEXT,
-    summary      JSONB,
-    risk_score   INT DEFAULT 0,
-    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    id             SERIAL PRIMARY KEY,
+    repo_url       TEXT NOT NULL,
+    pr_number      INT  NOT NULL,
+    title          TEXT,
+    author         TEXT,
+    changed_files  JSONB,
+    summary        JSONB,
+    risk_score     INT DEFAULT 0,
+    created_at     TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE (repo_url, pr_number)
 );
 
@@ -44,11 +46,12 @@ CREATE INDEX IF NOT EXISTS idx_scan_repo
     ON scan_results (repo_url);
 
 CREATE TABLE IF NOT EXISTS indexed_repos (
-    id           SERIAL PRIMARY KEY,
-    repo_url     TEXT UNIQUE NOT NULL,
-    status       TEXT DEFAULT 'pending',
-    file_count   INT DEFAULT 0,
-    chunk_count  INT DEFAULT 0,
-    indexed_at   TIMESTAMPTZ,
-    created_at   TIMESTAMPTZ DEFAULT NOW()
+    id             SERIAL PRIMARY KEY,
+    repo_url       TEXT UNIQUE NOT NULL,
+    status         TEXT DEFAULT 'pending',
+    file_count     INT DEFAULT 0,
+    chunk_count    INT DEFAULT 0,
+    error_message  TEXT,
+    indexed_at     TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ DEFAULT NOW()
 );

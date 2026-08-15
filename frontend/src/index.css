@@ -3,15 +3,169 @@
 @tailwind utilities;
 
 @layer base {
-  body { @apply bg-gray-950 text-gray-100 antialiased; }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-gray-900; }
-  ::-webkit-scrollbar-thumb { @apply bg-gray-600 rounded; }
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 text-ink-100 antialiased font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-brand-500/30 text-white;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #0f0f0d, 0 0 0 4px rgba(224, 157, 61, 0.7);
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-700 rounded-full border-2 border-solid border-ink-950;
+  }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-ink-600; }
 }
 
 @layer components {
-  .card { @apply bg-gray-900 border border-gray-800 rounded-xl p-6; }
-  .btn-primary { @apply bg-brand-500 hover:bg-brand-600 text-white font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-secondary { @apply bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-4 py-2 rounded-lg transition-colors; }
-  .input { @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-brand-500 w-full; }
+  /* ---- Surfaces ---- */
+
+  .card {
+    @apply relative rounded-xl border border-ink-700/60 bg-ink-850;
+    box-shadow: theme('boxShadow.card');
+  }
+
+  .card-interactive {
+    @apply transition-all duration-200;
+  }
+  .card-interactive:hover {
+    @apply border-ink-600 -translate-y-0.5;
+    box-shadow: theme('boxShadow.lift');
+  }
+
+  .card-hint {
+    @apply rounded-xl border border-brand-500/25 bg-gradient-to-b from-brand-500/[0.09] to-brand-500/[0.03];
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 28px -18px rgba(224,157,61,0.5);
+  }
+
+  .card-danger {
+    @apply rounded-xl border border-red-900/70 bg-red-950/40;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .card-success {
+    @apply rounded-xl border border-emerald-900/60 bg-emerald-950/30;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  .card-warn {
+    @apply rounded-xl border border-amber-900/60 bg-amber-950/30;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  /* ---- Buttons ---- */
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-ink-950 transition-all duration-150 cursor-pointer select-none;
+    background-image: linear-gradient(180deg, #f0b45c, #e09d3d);
+    box-shadow: theme('boxShadow.btn');
+  }
+  .btn-primary:hover {
+    background-image: linear-gradient(180deg, #f6c47a, #e8aa4a);
+    box-shadow: theme('boxShadow.btn-hover');
+  }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-primary:disabled { @apply opacity-50 cursor-not-allowed; box-shadow: none; }
+  .btn-primary:disabled:active { transform: none; }
+  .btn-primary:focus-visible {
+    box-shadow: 0 0 0 2px #0f0f0d, 0 0 0 4px rgba(224, 157, 61, 0.85), theme('boxShadow.btn');
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink-600/70 bg-ink-800 px-4 py-2 text-sm font-medium text-ink-200 transition-colors duration-150 cursor-pointer select-none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .btn-secondary:hover { @apply bg-ink-750 text-white border-ink-600; }
+  .btn-secondary:active { transform: translateY(1px); }
+  .btn-secondary:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  /* ---- Inputs ---- */
+
+  .input {
+    @apply w-full rounded-lg border border-ink-600/70 bg-ink-900/80 px-4 py-2 text-sm text-ink-100 placeholder-ink-500 transition-colors duration-150;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
+  }
+  .input:hover { @apply border-ink-600; }
+  .input:focus {
+    @apply border-brand-500/60 outline-none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.35), 0 0 0 3px rgba(224,157,61,0.14);
+  }
+  .input:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  /* ---- Labels & typography ---- */
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-400/90;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-ink-400 mb-1.5;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-ink-700 bg-ink-800/80 px-2.5 py-1 text-xs text-ink-300;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+
+  /* ---- Segmented control ---- */
+
+  .segmented {
+    @apply inline-flex rounded-lg border border-ink-700/70 bg-ink-900/80 p-1 gap-0.5;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .segmented button {
+    @apply rounded-md px-3.5 py-1.5 text-sm font-medium text-ink-400 transition-colors duration-150 cursor-pointer;
+  }
+  .segmented button:hover { @apply text-ink-200; }
+  .segmented button[data-active='true'] {
+    @apply text-ink-950 font-semibold;
+    background-image: linear-gradient(180deg, #f0b45c, #e09d3d);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 14px -6px rgba(224,157,61,0.7);
+  }
+
+  /* ---- Utility ---- */
+
+  .text-gradient-amber {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(100deg, #f6c47a, #e8b156 45%, #c07f2a);
+  }
+
+  .mono {
+    @apply font-mono;
+  }
+
+  /* ---- Backgrounds ---- */
+
+  .app-glow {
+    background:
+      radial-gradient(900px 400px at 88% -10%, rgba(224, 157, 61, 0.08), transparent 60%),
+      radial-gradient(760px 360px at -6% 0%, rgba(132, 141, 190, 0.05), transparent 55%);
+  }
+
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
 }

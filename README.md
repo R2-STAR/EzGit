@@ -1,13 +1,13 @@
-# EzGit— AI-Powered Code Intelligence
+# EzGit - AI-Powered Code Intelligence
 
 Understand any GitHub or GitLab repository instantly. Explain PRs, search code in plain English, scan for vulnerabilities, and onboard to new codebases in minutes.
 
 ## Features
 
-- **PR Explainer** — AI summary, risk score 0-100, risky file highlights for any pull request
-- **Code Search** — Natural language search over indexed codebases using pgvector
-- **Security Scanner** — Async Semgrep + Snyk scan with AI-written security report
-- **Onboarding** — Architecture overview, important directories, one-command local setup
+- **PR Explainer** - AI summary, risk score 0-100, risky file highlights for any pull request
+- **Code Search** - Natural language search over indexed codebases using pgvector
+- **Security Scanner** - Async Semgrep + Snyk scan with AI-written security report
+- **Onboarding** - Architecture overview, important directories, one-command local setup
 
 ## Tech Stack
 
@@ -54,7 +54,7 @@ Start everything (databases, API, Celery worker, frontend) in the background:
 
     .\start.ps1
 
-Or start manually — databases first:
+Or start manually, databases first:
 
     docker compose up -d postgres redis
 

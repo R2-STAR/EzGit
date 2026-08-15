@@ -21,7 +21,7 @@ celery_app.conf.update(
 
 
 def make_session_factory():
-    """Create a fresh engine + session factory — safe for forked Celery workers."""
+    """Create a fresh engine + session factory, safe for forked Celery workers."""
     engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
     return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -81,7 +81,7 @@ def run_security_scan(self, scan_id: str, repo_name: str):
     run_async(_run())
 
 
-@celery_app.task(bind=True, name="tasks.index_repo")
+@celery_app.task(bind=True, name="tasks.index_repo", soft_time_limit=600, time_limit=900)
 def index_repo_task(self, repo_name: str):
     async def _run():
         from app.services.embeddings import index_repository

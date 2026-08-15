@@ -1,16 +1,25 @@
 import type { Severity } from '../../types'
 
-const classes: Record<Severity, string> = {
-  critical: 'bg-red-900/60 text-red-300 border border-red-700',
-  high:     'bg-orange-900/60 text-orange-300 border border-orange-700',
-  medium:   'bg-yellow-900/60 text-yellow-300 border border-yellow-700',
-  low:      'bg-blue-900/60 text-blue-300 border border-blue-700',
-  info:     'bg-gray-800 text-gray-400 border border-gray-700',
+const styles: Record<Severity, string> = {
+  critical: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+  high:     'bg-orange-500/15 text-orange-300 border-orange-500/30',
+  medium:   'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  low:      'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  info:     'bg-ink-800 text-ink-400 border-ink-700',
+}
+
+const dots: Record<Severity, string> = {
+  critical: 'bg-rose-400',
+  high:     'bg-orange-400',
+  medium:   'bg-amber-400',
+  low:      'bg-sky-400',
+  info:     'bg-ink-500',
 }
 
 export default function SeverityBadge({ severity }: { severity: Severity }) {
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${classes[severity]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${styles[severity]}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dots[severity]}`} />
       {severity.charAt(0).toUpperCase() + severity.slice(1)}
     </span>
   )

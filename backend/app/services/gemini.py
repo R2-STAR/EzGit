@@ -110,23 +110,98 @@ File tree (sample):
     return json.loads(raw)
 
 
-async def embed_text(text: str) -> list[float]:
-    import httpx
-    async with httpx.AsyncClient() as client:
-        r = await client.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={settings.GEMINI_API_KEY}",
-            json={"model": "models/gemini-embedding-001", "content": {"parts": [{"text": text}]}, "taskType": "RETRIEVAL_DOCUMENT"},
+def _is_quota_exhausted(r) -> bool:
+    try:
+        body = r.text or ""
+        return (
+            r.status_code == 429
+            and ("quota exceeded for metric" in body.lower() or "RESOURCE_EXHAUSTED" in body)
         )
-        r.raise_for_status()
-        return r.json()["embedding"]["values"]
+    except Exception:
+        return False
+
+
+def _quota_message(r) -> str:
+    try:
+        body = (r.text or "").strip()
+        line = next((l for l in body.splitlines() if "quota exceeded" in l.lower()), body[:300])
+        return f"Gemini free-tier quota exhausted: {line.strip()}"
+    except Exception:
+        return "Gemini free-tier quota exhausted."
+
+
+async def _embed(text: str, task_type: str) -> list[float]:
+    import asyncio
+    import random
+    import httpx
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
+        f"?key={settings.GEMINI_API_KEY}"
+    )
+    payload = {
+        "model": "models/gemini-embedding-001",
+        "content": {"parts": [{"text": text}]},
+        "taskType": task_type,
+        "outputDimensionality": 768,
+    }
+    async with httpx.AsyncClient() as client:
+        for attempt in range(6):
+            r = await client.post(url, json=payload)
+            if r.status_code == 429 and _is_quota_exhausted(r):
+                raise RuntimeError(_quota_message(r))
+            if r.status_code == 429:
+                await asyncio.sleep(min(2 ** attempt, 15) + random.random())
+                continue
+            r.raise_for_status()
+            return r.json()["embedding"]["values"]
+    raise RuntimeError("Gemini embedding rate limit exceeded after retries")
+
+
+async def embed_text(text: str) -> list[float]:
+    return await _embed(text, "RETRIEVAL_DOCUMENT")
 
 
 async def embed_query(query: str) -> list[float]:
+    return await _embed(query, "RETRIEVAL_QUERY")
+
+
+async def embed_batch(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
+    """Embed many texts in one batchEmbedContents call (up to 64 each).
+
+    Reduces free-tier quota consumption ~64x compared to one call per chunk,
+    which is the difference between indexing a whole repo and exhausting the
+    daily 1000-request free-tier budget.
+    """
+    import asyncio
+    import random
     import httpx
-    async with httpx.AsyncClient() as client:
-        r = await client.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={settings.GEMINI_API_KEY}",
-            json={"model": "models/gemini-embedding-001", "content": {"parts": [{"text": query}]}, "taskType": "RETRIEVAL_QUERY"},
-        )
-        r.raise_for_status()
-        return r.json()["embedding"]["values"]
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents"
+        f"?key={settings.GEMINI_API_KEY}"
+    )
+    results: list[list[float]] = []
+    for start in range(0, len(texts), 64):
+        batch = texts[start:start + 64]
+        requests = [{
+            "model": "models/gemini-embedding-001",
+            "content": {"parts": [{"text": t}]},
+            "taskType": task_type,
+            "outputDimensionality": 768,
+        } for t in batch]
+        async with httpx.AsyncClient() as client:
+            for attempt in range(6):
+                r = await client.post(url, json={"model": "models/gemini-embedding-001", "requests": requests})
+                if r.status_code == 429 and _is_quota_exhausted(r):
+                    raise RuntimeError(_quota_message(r))
+                if r.status_code == 429:
+                    await asyncio.sleep(min(2 ** attempt, 15) + random.random())
+                    continue
+                r.raise_for_status()
+                embeddings = [item["values"] for item in r.json()["embeddings"]]
+                if len(embeddings) != len(batch):
+                    raise RuntimeError(f"batchEmbedContents returned {len(embeddings)} embeddings for {len(batch)} texts")
+                results.extend(embeddings)
+                break
+            else:
+                raise RuntimeError("Gemini embedding rate limit exceeded after retries")
+    return results

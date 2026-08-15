@@ -11,6 +11,9 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/app/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
+      - ./backend/app/db/migrations/002_pr_author.sql:/docker-entrypoint-initdb.d/002_pr_author.sql
+      - ./backend/app/db/migrations/003_index_error.sql:/docker-entrypoint-initdb.d/003_index_error.sql
+      - ./backend/app/db/migrations/004_embedding_dims.sql:/docker-entrypoint-initdb.d/004_embedding_dims.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ezGit"]
       interval: 5s

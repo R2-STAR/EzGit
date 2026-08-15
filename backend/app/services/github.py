@@ -1,7 +1,12 @@
 from github import Github, GithubException
 from app.config import settings
+from app.utils.repo import normalize_repo
 
 _gh = Github(settings.GITHUB_TOKEN)
+
+
+def _get_repo(repo_name: str):
+    return _gh.get_repo(normalize_repo(repo_name))
 
 CODE_EXTENSIONS = {
     ".py", ".ts", ".tsx", ".js", ".jsx", ".go",
@@ -17,7 +22,7 @@ CONFIG_FILES = {
 
 
 async def get_pr_data(repo_name: str, pr_number: int) -> dict:
-    repo = _gh.get_repo(repo_name)
+    repo = _get_repo(repo_name)
     pr = repo.get_pull(pr_number)
     files = list(pr.get_files())
     changed_files = [f.filename for f in files]
@@ -38,17 +43,25 @@ async def get_pr_data(repo_name: str, pr_number: int) -> dict:
 
 
 async def get_repo_tree(repo_name: str) -> list[str]:
-    repo = _gh.get_repo(repo_name)
+    repo = _get_repo(repo_name)
     tree = repo.get_git_tree(repo.default_branch, recursive=True)
     return [item.path for item in tree.tree if item.type == "blob"]
 
 
 async def get_file_content(repo_name: str, file_path: str) -> str:
-    repo = _gh.get_repo(repo_name)
+    import httpx
+    repo = _get_repo(repo_name)
     try:
         content = repo.get_contents(file_path)
-        return content.decoded_content.decode("utf-8", errors="ignore")
-    except (GithubException, UnicodeDecodeError):
+        if content.encoding == "base64":
+            return content.decoded_content.decode("utf-8", errors="ignore")
+        url = f"https://raw.githubusercontent.com/{normalize_repo(repo_name)}/{repo.default_branch}/{file_path}"
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url)
+            if r.status_code == 200:
+                return r.content.decode("utf-8", errors="ignore")
+        return ""
+    except (GithubException, UnicodeDecodeError, AssertionError):
         return ""
 
 

@@ -5,6 +5,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 from typing import Optional, List, Any
 from datetime import datetime
+from github import RateLimitExceededException
 
 from app.db.postgres import get_db
 from app.db.redis import cache_get, cache_set
@@ -66,8 +67,20 @@ async def explain_pull_request(body: PRExplainRequest, db: AsyncSession = Depend
             pr_data = await gitlab_pr_data(body.repo, body.pr_number)
         else:
             pr_data = await github_pr_data(body.repo, body.pr_number)
+    except RateLimitExceededException:
+        raise HTTPException(
+            status_code=429,
+            detail="GitHub API rate limit reached. Wait a bit and try again.",
+        )
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"PR not found: {str(e)}")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Couldn't find that pull request on {body.provider}. Make sure the "
+                f"repo is public, the PR number is right, and use owner/repo format. "
+                f"({e})"
+            ),
+        )
     try:
         explanation = await explain_pr(pr_data["diff"], pr_data["files"], pr_data["title"])
     except Exception as e:

@@ -2,6 +2,7 @@ import subprocess
 import json
 import tempfile
 import os
+import shutil
 from typing import List
 from app.services.github import get_file_content, get_repo_tree
 from app.config import settings
@@ -14,6 +15,9 @@ MANIFEST_FILES = [
 
 
 async def run_snyk_scan(repo_name: str) -> List[dict]:
+    snyk_bin = shutil.which("snyk")
+    if not snyk_bin:
+        raise RuntimeError("snyk CLI is not installed. Run: npm install -g snyk")
     all_files = await get_repo_tree(repo_name)
     manifest_paths = [f for f in all_files if f.split("/")[-1] in MANIFEST_FILES]
     if not manifest_paths:
@@ -29,8 +33,8 @@ async def run_snyk_scan(repo_name: str) -> List[dict]:
             with open(full_path, "w", encoding="utf-8") as f:
                 f.write(content)
             result = subprocess.run(
-                ["snyk", "test", "--file=" + full_path, "--json", "--severity-threshold=low"],
-                capture_output=True, text=True, timeout=120,
+                [snyk_bin, "test", "--file=" + full_path, "--json", "--severity-threshold=low"],
+                capture_output=True, text=True, timeout=300,
                 env={**os.environ, "SNYK_TOKEN": settings.SNYK_TOKEN},
             )
             if result.stdout:
