@@ -34,30 +34,43 @@ Understand any GitHub or GitLab repository instantly. Explain PRs, search code i
 
 ### Prerequisites
 
-- Docker Desktop
-- WSL2 (Ubuntu) on Windows
+- Docker Desktop (used only for PostgreSQL + Redis)
+- Python 3.11+ (3.13 works with the current pinned dependencies)
+- Node.js 18+
 - Git
 
-### Setup
+### Setup (Windows quick start)
 
 Clone the repo:
 
     git clone https://github.com/R2-STAR/EzGit.git
     cd EzGit
 
-Create your environment file:
+Create your environment file and fill in your API keys (see the API Keys table below):
 
-    cp backend/.env.example backend/.env
+    Copy-Item backend\.env.example backend\.env
 
-Fill in your API keys in backend/.env:
+Start everything (databases, API, Celery worker, frontend) in the background:
 
-    GITHUB_TOKEN=ghp_...
-    GEMINI_API_KEY=AIza...
-    SNYK_TOKEN=...
+    .\start.ps1
 
-Start everything:
+Or start manually — databases first:
 
-    make setup
+    docker compose up -d postgres redis
+
+then, in three separate terminals (run from the repo root):
+
+    cd backend; .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    cd backend; .venv\Scripts\python -m celery -A app.workers.tasks worker --loglevel=info --pool=solo
+    cd frontend; npm run dev
+
+The first run creates the backend venv and installs dependencies automatically
+(via `start.ps1`, or manually with `python -m venv backend\.venv`, `pip install -r
+requirements.txt`, and `npm install`).
+
+> Note: PostgreSQL is mapped to host port **5433** to avoid conflicts with other
+> local Postgres installs. The Celery worker uses `--pool=solo`, which is required
+> on Windows (the default `prefork` pool crashes with `WinError 5`).
 
 Open your browser:
 
@@ -65,27 +78,32 @@ Open your browser:
     Backend   →  http://localhost:8000
     API Docs  →  http://localhost:8000/docs
 
+### Running everything with Docker (Linux/macOS)
+
+    cp backend/.env.example backend/.env
+    make setup   # or: docker compose up -d --build
+
 ## Daily Commands
 
-    # Start
-    docker compose up -d
-
-    # Stop
-    docker compose down
-
-    # View logs
-    make logs
-
-    # Full reset
-    make clean && make setup
+    # Start everything (databases + app)      .\start.ps1
+    # Start app only (DBs already running)    .\start.ps1 -SkipDocker
+    # Stop app (keeps databases running)      .\stop.ps1
+    # Stop app + databases                    .\stop.ps1 -AlsoDocker
+    # View app logs                           Get-ChildItem .logs
+    # Docker-only: start                      docker compose up -d postgres redis
+    # Docker-only: stop                       docker compose down
+    # Full reset (drop DB data)               docker compose down -v
 
 ## API Keys Required
 
-| Key             | Where to get                                          |
-|-----------------|-------------------------------------------------------|
-| GITHUB_TOKEN    | github.com → Settings → Developer settings → PAT     |
-| GEMINI_API_KEY  | aistudio.google.com                                   |
-| SNYK_TOKEN      | app.snyk.io → Account settings                        |
+Copy `backend/.env.example` to `backend/.env` and fill in the values:
+
+| Key              | Where to get                                                                                                     | Scopes / notes                                        |
+|------------------|------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `GITHUB_TOKEN`   | github.com → avatar → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token | `repo`, `read:org`. Starts with `ghp_...`             |
+| `GEMINI_API_KEY` | https://aistudio.google.com/app/apikey → Create API key                                                            | Starts with `AIza...`                                 |
+| `SNYK_TOKEN`     | https://app.snyk.io → avatar → Account settings → API token → COPY                                                 | Needed for the Security Scanner feature               |
+| `GITLAB_TOKEN`   | (optional) gitlab.com → avatar → Preferences → Access Tokens                                                       | `read_api`, `read_repository`. Only for GitLab repos  |
 
 ## Project Structure
 
